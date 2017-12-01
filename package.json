@@ -2,6 +2,7 @@
   "name": "nivo_stream",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://demartsc.github.io/nivo_stream",
   "dependencies": {
     "gh-pages": "^1.1.0",
     "nivo": "^0.30.0",
@@ -11,6 +12,8 @@
     "tableau-api": "^2.1.3"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",

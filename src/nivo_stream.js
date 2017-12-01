@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Chord } from 'nivo';
+import { Stream } from 'nivo';
 import Tableau from 'tableau-api';
 import _ from 'lodash';
 
@@ -11,9 +11,9 @@ class TableauStream extends Component {
       isLoading: true,
       viz: {},
       data: {}, 
-      chordParms: {},
+      streamParms: {},
       keys: null,
-      matrix: null, 
+      matrix: [], 
       col_names: []
     };
 
@@ -36,13 +36,13 @@ class TableauStream extends Component {
     this.sheets = {};
 
     this.uniqKeys = [];
+    this.uniqAxis = [];
     this.matrix = [];
-    this.chordParms = [];
+    this.streamParms = [];
     this.data = [];
 
     this.getColumnIndexes = this.getColumnIndexes.bind(this);
     this.convertRowToObject = this.convertRowToObject.bind(this);
-    this.matrixify = this.matrixify.bind(this);
     this.handleClick = this.handleClick.bind(this);
   }
 
@@ -71,36 +71,10 @@ class TableauStream extends Component {
     return o;
   };
 
-  matrixify(arr, size, col_names)
-  {
-    var matrix = [];
-    for(var i=0; i < size; i++) {
-      matrix[i] = [];
-      for(var j=0; j < size; j++) {
-        matrix[i][j] = 0.0; // default all values to 0
-      }
-    }
-
-    for(i=0; i < size; i++) {
-      for(j=0; j < size; j++) {
-        for (var k=0; k<arr.length; k++){
-          if (arr[k][col_names[0]] === this.uniqKeys[i] && arr[k][col_names[1]] === this.uniqKeys[j]) {
-            matrix[i][j] = parseFloat(arr[k][col_names[2]]); //if we find a match, then populate value
-            if (matrix[j][i] === 0.0) {
-              matrix[j][i] = parseFloat(arr[k][col_names[2]]); //if we find a match, then populate value
-            }
-          } // testing this out, will need to remove it
-        }
-      }
-    }
-    //console.log(matrix);
-    return matrix;
-  }
-
   // this function is made to be a simple demonstration of interacting with tableau from nivo click event
   handleClick(data, e) {
     let tempArray = {};
-    //console.log('Nivo chord was clicked');
+    //console.log('Nivo was clicked');
     //console.log(data, e.target);
 
     // check whether it is a ribbon or arc (this could be done better)
@@ -141,8 +115,8 @@ class TableauStream extends Component {
 
     this.workbook.getParametersAsync().then(t => {
       for (let j = 0; j < t.length; j++) {
-        if (t[j].getName().toUpperCase() === 'CHORD PARMS') {
-          this.chordParms = JSON.parse(t[j].getCurrentValue().formattedValue.toString());
+        if (t[j].getName().toUpperCase() === 'NIVO PARMS') {
+          this.streamParms = JSON.parse(t[j].getCurrentValue().formattedValue.toString());
         }
       }
       //console.log(t); // log parms for troubleshooting
@@ -150,9 +124,9 @@ class TableauStream extends Component {
       // getData() code for react from https://github.com/cmtoomey/TableauReact
       // we are still in the parameter async.then call here, chaining the get data call after it
       let sheet = {};
-      if (activeSheetName in this.chordParms) { // need to check this more gracefull across the whole file. 
-        if ("dataSheet" in this.chordParms[activeSheetName]) { 
-          sheet = this.sheets.get(this.chordParms[activeSheetName].dataSheet);
+      if (activeSheetName in this.streamParms) { // need to check this more gracefull across the whole file. 
+        if ("dataSheet" in this.streamParms[activeSheetName]) { 
+          sheet = this.sheets.get(this.streamParms[activeSheetName].dataSheet);
         }
         else  {
           sheet = this.sheets[0];
@@ -172,23 +146,24 @@ class TableauStream extends Component {
         let col_names = [];
         let col_indexes = [];
         //console.log(tableauData);
+        //console.log(t);
 
         // if we have been sent parms for this dashboard grab fields
-        if (activeSheetName in this.chordParms) {
-          if ("inField" in this.chordParms[activeSheetName]) {
-            col_names.push(this.chordParms[activeSheetName].inField);
+        if (activeSheetName in this.streamParms) {
+          if ("streamField" in this.streamParms[activeSheetName]) {
+            col_names.push(this.streamParms[activeSheetName].streamField);
           } else {
             col_names.push(t.getColumns()[0].getFieldName());
           }
 
-          if ("outField" in this.chordParms[activeSheetName]) {
-            col_names.push(this.chordParms[activeSheetName].outField);
+          if ("axisField" in this.streamParms[activeSheetName]) {
+            col_names.push(this.streamParms[activeSheetName].axisField);
           } else {
             col_names.push(t.getColumns()[1].getFieldName());
           }
 
-          if ("valField" in this.chordParms[activeSheetName]) {
-            col_names.push(this.chordParms[activeSheetName].valField);
+          if ("valField" in this.streamParms[activeSheetName]) {
+            col_names.push(this.streamParms[activeSheetName].valField);
           } else {
             col_names.push(t.getColumns()[2].getFieldName());
           }
@@ -201,20 +176,43 @@ class TableauStream extends Component {
         col_indexes = this.getColumnIndexes(t,col_names);
         //console.log(col_indexes);
 
-        // now that we have the column name and indexes we can build our table for chord
+        // now that we have the column name and indexes we can build our table for stream
         for (let j = 0, len = tableauData.length; j < len; j++) {
           //console.log(this.convertRowToObject(tableauData[j], col_indexes));
           this.data.push(this.convertRowToObject(tableauData[j], col_indexes));
         }
         //console.log(this.data);
   
-        // use lodash to create a unique list of values in an array
-        this.uniqKeys = _.union(_.map(this.data,col_names[0]),_.map(this.data, col_names[1]));
+        // use lodash to get uniq list of values in array
+        this.uniqKeys = _.union(_.map(this.data,col_names[0]));
         //this.uniqKeys = _.sortBy(_.union(_.map(this.data,col_names[0]),_.map(this.data, col_names[1])));
         //console.log(this.uniqKeys);
 
-        // this doesn't work yet but can use something like this to create matrix from array
-        this.matrix = this.matrixify(this.data, this.uniqKeys.length, col_names);
+        //get uniq dates/or other axis value
+        this.uniqAxis = _.union(_.map(this.data,col_names[1]));
+        //console.log(this.uniqAxis);
+
+        //try to start using temp variable
+        let tempArray = {};
+        let secArray = {};
+        // let doneArray = {};
+
+        for (let i = 0; i < this.uniqAxis.length; i++) {
+
+          //console.log(this.uniqAxis[i]);
+          tempArray = _.filter(this.data,[col_names[1], this.uniqAxis[i]]);
+          for (let k = 0; k < tempArray.length; k++) {
+            secArray[tempArray[k][col_names[0]]] = parseFloat( (tempArray[k][col_names[2]] === "%missing%") ? null : tempArray[k][col_names[2]] );
+          }
+          console.log("secArray", secArray);
+          this.matrix[this.uniqAxis[i]] = secArray;
+          //left off here, we just have to figure out how to get the array right is all
+        }
+        // console.log("doneArray",doneArray);
+        // console.log("axis", this.uniqAxis);
+        // this.matrix = doneArray;
+        console.log("matrix",this.matrix);
+        // this should be good to go, just need to figure out how to pass it all to nivo
         
         // update state after we do all of this stuff, triggers re-render
         this.setState({
@@ -222,7 +220,7 @@ class TableauStream extends Component {
             data: this.data, 
             keys: this.uniqKeys,
             matrix: this.matrix, 
-            chordParms: this.chordParms[activeSheetName],
+            streamParms: this.streamParms[activeSheetName],
             col_names: col_names
         }); // these error calls do not do anything
       }, function(err) {return console.error("Error during Tableau Async request:", err._error.message, err._error.stack);});
@@ -235,14 +233,13 @@ class TableauStream extends Component {
       inField, 
       outField, 
       valField, 
-      ...restChordProps
-    } = this.state.chordParms || {};
+      ...restNivoProps
+    } = this.state.streamParms || {};
     
     return ( //onMouseOver={this.handleClick} onClick={this.handleClick}
-       <div id = "chordDiv" >
-         <Chord
-                id = "id" // this doesn't work :(, if we can get the value added we can use event listeners no prob
-                matrix={this.state.matrix || this.defaultData}
+       <div id = "nivoDiv" >
+         <Stream
+                data={this.state.matrix || this.defaultData}
                 keys={this.state.keys || this.defaultKeys}
                 margin={{
                     "top": 60,
@@ -252,31 +249,18 @@ class TableauStream extends Component {
                 }}
                 height={500}
                 width={500}
-                padAngle={0.02}
-                innerRadiusRatio={0.96}
-                innerRadiusOffset={0.02}
-                arcOpacity={1}
-                arcBorderWidth={1}
-                arcBorderColor="inherit:darker(0.4)"
-                ribbonOpacity={0.5}
-                ribbonBorderWidth={1}
-                ribbonBorderColor="inherit:darker(0.4)"
-                enableLabel={true}
-                label="id"
-                labelOffset={12}
-                labelRotation={-90}
-                labelTextColor="inherit:darker(1)"
+                curve="monotoneX"
+                offsetType="silhouette"
+                order="insideOut"
+                fillOpacity={0.85}
+                borderColor="#000"
                 colors="set3"
                 isInteractive={true}
-                arcHoverOpacity={1}
-                arcHoverOthersOpacity={0.15}
-                ribbonHoverOpacity={1}
-                ribbonHoverOthersOpacity={0.15}
                 animate={true}
                 motionStiffness={90}
                 motionDamping={7}
                 onClick={(data, event) => this.handleClick(data, event)}
-                {...restChordProps} // this is passed from users and will overwrite above defaults
+                {...restNivoProps} // this is passed from users and will overwrite above defaults
             />
       </div>
     );
