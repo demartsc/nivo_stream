@@ -194,24 +194,19 @@ class TableauStream extends Component {
 
         //try to start using temp variable
         let tempArray = {};
-        let secArray = {};
         // let doneArray = {};
 
-        for (let i = 0; i < this.uniqAxis.length; i++) {
-
-          //console.log(this.uniqAxis[i]);
-          tempArray = _.filter(this.data,[col_names[1], this.uniqAxis[i]]);
-          for (let k = 0; k < tempArray.length; k++) {
+        for (let i = 0; i < this.uniqAxis.length; i++) { // loop through axis values
+          var secArray = {}; // have to declare this here 
+          tempArray = _.filter(this.data,[col_names[1], this.uniqAxis[i]]); // filter on axis value
+          for (let k = 0; k < tempArray.length; k++) { // for each axis value create object of all keys and values
             secArray[tempArray[k][col_names[0]]] = parseFloat( (tempArray[k][col_names[2]] === "%missing%") ? null : tempArray[k][col_names[2]] );
           }
-          console.log("secArray", secArray);
-          this.matrix[this.uniqAxis[i]] = secArray;
+          //console.log("secArray", secArray); // testing object creation
+          this.matrix.push(secArray); // push the key value object onto 
           //left off here, we just have to figure out how to get the array right is all
         }
-        // console.log("doneArray",doneArray);
-        // console.log("axis", this.uniqAxis);
-        // this.matrix = doneArray;
-        console.log("matrix",this.matrix);
+        //console.log("matrix",this.matrix);
         // this should be good to go, just need to figure out how to pass it all to nivo
         
         // update state after we do all of this stuff, triggers re-render
@@ -247,6 +242,8 @@ class TableauStream extends Component {
                     "bottom": 60,
                     "left": 60
                 }}
+                axisBottom={{}}
+                enableGridX={false}
                 height={500}
                 width={500}
                 curve="monotoneX"
