@@ -167,6 +167,10 @@ class TableauStream extends Component {
           } else {
             col_names.push(t.getColumns()[2].getFieldName());
           }
+
+          if ("colorField" in this.streamParms[activeSheetName]) {
+            col_names.push(this.streamParms[activeSheetName].colorField);
+          }
         } else {
             col_names.push(t.getColumns()[0].getFieldName());
             col_names.push(t.getColumns()[1].getFieldName());
@@ -184,7 +188,7 @@ class TableauStream extends Component {
         //console.log(this.data);
   
         // use lodash to get uniq list of values in array
-        this.uniqKeys = _.union(_.map(this.data,col_names[0]));
+        this.uniqKeys = _.sortBy(_.union(_.map(this.data,col_names[0])));
         //this.uniqKeys = _.sortBy(_.union(_.map(this.data,col_names[0]),_.map(this.data, col_names[1])));
         //console.log(this.uniqKeys);
 
@@ -200,7 +204,10 @@ class TableauStream extends Component {
           var secArray = {}; // have to declare this here 
           tempArray = _.filter(this.data,[col_names[1], this.uniqAxis[i]]); // filter on axis value
           for (let k = 0; k < tempArray.length; k++) { // for each axis value create object of all keys and values
-            secArray[tempArray[k][col_names[0]]] = parseFloat( (tempArray[k][col_names[2]] === "%missing%") ? null : tempArray[k][col_names[2]] );
+            secArray[tempArray[k][col_names[0]]] = parseFloat( (tempArray[k][col_names[2]] === "%missing%") ? 0 : tempArray[k][col_names[2]] );
+            if (col_names.length > 3) {
+              secArray[tempArray[k][col_names[0]] + "Color"] = tempArray[k][col_names[3]];
+            }
           }
           //console.log("secArray", secArray); // testing object creation
           this.matrix.push(secArray); // push the key value object onto 
@@ -237,25 +244,33 @@ class TableauStream extends Component {
                 data={this.state.matrix || this.defaultData}
                 keys={this.state.keys || this.defaultKeys}
                 margin={{
-                    "top": 60,
-                    "right": 60,
-                    "bottom": 60,
-                    "left": 60
+                    "top": 30,
+                    "right": 27,
+                    "bottom": 0,
+                    "left": 87
                 }}
-                axisBottom={{}}
+                axisBottom={{
+                  tickSize: 0
+                }}
                 enableGridX={false}
                 height={500}
                 width={500}
-                curve="monotoneX"
+                curve="catmullRom"
                 offsetType="silhouette"
                 order="insideOut"
-                fillOpacity={0.85}
-                borderColor="#000"
+                fillOpacity={0.60}
+                borderColor="inherit:darker(1.5)"
                 colors="set3"
+                //colorBy={({ id, data }) => data[`${id}Color`]}
                 isInteractive={true}
                 animate={true}
                 motionStiffness={90}
                 motionDamping={7}
+                tooltipFormat={value =>
+                  `${Number(value).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                  })} T`
+                }
                 onClick={(data, event) => this.handleClick(data, event)}
                 {...restNivoProps} // this is passed from users and will overwrite above defaults
             />
