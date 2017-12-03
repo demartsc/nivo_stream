@@ -13,7 +13,9 @@ class TableauStream extends Component {
       streamParms: {},
       keys: null,
       matrix: [], 
-      col_names: []
+      col_names: [], 
+      clickCount: this.props.clickCount,
+      markEvent: this.props.markEvent
     };
 
     //this.updateData = this.updateData.bind(this);
@@ -225,8 +227,17 @@ class TableauStream extends Component {
     }, function(err) {return console.error("Error during Tableau Async request:", err._error.message, err._error.stack);});    
   }
 
+  // componentWillReceiveProps(nextProps) {
+  //   this.setState({
+  //     clickCount : nextProps.clickCount,
+  //     markEvent : nextProps.markEvent
+  //   });
+  //   console.log("nivo_stream", this.state);
+  // }
+
   componentDidUpdate() {
     console.log("updated");
+    console.log(this.props, this.state);
   }
 
   componentDidMount() {

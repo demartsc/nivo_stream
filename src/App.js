@@ -13,7 +13,8 @@ class App extends Component {
       tab: {}, //for testing, may need to be removed
       filter: {},
       parameter: {},
-      mark: {}
+      mark: {}, 
+      markSelect: this.props.markSelect
     };
 
     this.width = 800; // default, although this gets overwritten in the initTableau function
@@ -91,10 +92,10 @@ class App extends Component {
         this.viz.setFrameSize(this.width, this.height + 100);
 
         // add event listeners, have yet to be able to change chord from these though
-        this.viz.addEventListener(window.tableau.TableauEventName.TAB_SWITCH, this.onTabSwitch);
-        this.viz.addEventListener(window.tableau.TableauEventName.FILTER_CHANGE, this.onFilterChange);
-        this.viz.addEventListener(window.tableau.TableauEventName.PARAMETER_VALUE_CHANGE, this.onParameterChange);
-        this.viz.addEventListener(window.tableau.TableauEventName.MARKS_SELECTION, this.onMarkSelect);
+        // this.viz.addEventListener(window.tableau.TableauEventName.TAB_SWITCH, this.onTabSwitch);
+        // this.viz.addEventListener(window.tableau.TableauEventName.FILTER_CHANGE, this.onFilterChange);
+        // this.viz.addEventListener(window.tableau.TableauEventName.PARAMETER_VALUE_CHANGE, this.onParameterChange);
+        this.viz.addEventListener(window.tableau.TableauEventName.MARKS_SELECTION, this.state.markSelect);
       }
     };
 
