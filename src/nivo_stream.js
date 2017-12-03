@@ -8,7 +8,6 @@ class TableauStream extends Component {
     super(props);
 
     this.state = {
-      isLoading: true,
       viz: {},
       data: {}, 
       streamParms: {},
@@ -44,6 +43,7 @@ class TableauStream extends Component {
     this.getColumnIndexes = this.getColumnIndexes.bind(this);
     this.convertRowToObject = this.convertRowToObject.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.pullTableau = this.pullTableau.bind(this);
   }
 
   getColumnIndexes(table, required_keys) {
@@ -99,12 +99,7 @@ class TableauStream extends Component {
     }
   }
 
-  componentDidUpdate() {
-    console.log("updated");
-  }
-
-  componentDidMount() {
-    setTimeout(function() {console.log('delaying half second');}, 500);
+  pullTableau() {
     console.log("mounted");
     this.viz = window.top.tableau.VizManager.getVizs()[0];
     this.workbook = this.viz.getWorkbook();
@@ -227,7 +222,19 @@ class TableauStream extends Component {
             col_names: col_names
         }); // these error calls do not do anything
       }, function(err) {return console.error("Error during Tableau Async request:", err._error.message, err._error.stack);});
-    }, function(err) {return console.error("Error during Tableau Async request:", err._error.message, err._error.stack);});
+    }, function(err) {return console.error("Error during Tableau Async request:", err._error.message, err._error.stack);});    
+  }
+
+  componentDidUpdate() {
+    console.log("updated");
+  }
+
+  componentDidMount() {
+    var that = this;
+    setTimeout(function() {
+      console.log('delaying half second');
+      that.pullTableau();
+    }, 500);
   }
 
   render() {
